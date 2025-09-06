@@ -1,0 +1,6 @@
+name: dwz-flask
+services:
+- name: web
+  github:
+    repo: cykzht/dwz-flask
+    branch: main
