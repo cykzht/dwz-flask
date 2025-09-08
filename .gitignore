@@ -5,3 +5,4 @@ ca.pem
 client-cert.pem
 client-key.pem
 .env
+.idea
