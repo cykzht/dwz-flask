@@ -69,6 +69,7 @@ def redirect_to_url(short_code):
     )
     if short_url:
         short_url.visit_count += 1
+        db.session.commit()
         threading.Thread(target=async_log, args=(cat_log,)).start()
         return redirect(short_url.longurl)
     else:
