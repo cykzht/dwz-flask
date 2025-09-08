@@ -1,5 +1,6 @@
 *.pyc
 __pycache__/*
+.venv
 ca.pem
 client-cert.pem
 client-key.pem
