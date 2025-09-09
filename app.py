@@ -15,6 +15,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENCODING'] = "utf8mb4"
 db = SQLAlchemy(app)
 
+# 使用集合提高查找速度
+pingbi_extensions = {'.sql', '.zip', '.key', '.env', '.xml', '.yml', '.php', '.config', '.txt', '.html', '.css', '.js', '.do', '.png', '.remote', '.local', '.rar', '.gz', '.tgz', '.php7'}
+blicklist_IP = set()  # 改为集合提高查找速度
 
 class ShortURL(db.Model):
     __tablename__ = 'url'
@@ -52,12 +55,22 @@ def async_log(cat_log):
 limiter = Limiter(
     key_func=get_real_ip,
     app=app,
-    default_limits=["50 per hour", "8 per minute"]
+    default_limits=["50 per hour", "5 per minute"],
+    storage_uri="memory://"
 )
 
 
 @app.route('/<short_code>')
+@limiter.limit("5 per minute")  # 添加具体限制
 def redirect_to_url(short_code):
+    # 检查是否在黑名单中
+    if get_real_ip() in blicklist_IP:
+        return "nmsl", 403
+    # 检查后缀 - 优化版本
+    if any(short_code.endswith(ext) for ext in pingbi_extensions):
+        # 拉黑IP
+        blicklist_IP.add(get_real_ip())
+        return "ILGLR AMNS", 403
     short_url = ShortURL.query.filter_by(key=short_code).first()
     # Log the access
     cat_log = CatLog(
@@ -78,11 +91,13 @@ def redirect_to_url(short_code):
 
 
 @app.route('/')
+@limiter.limit("10 per minute")  # 首页也限制访问频率
 def home():
     return redirect('https://www.g2022cyk.top')
 
 
 @app.route('/sitemap.xml')
+@limiter.limit("10 per minute")  # 限制访问频率
 def sitemap_xml():
     # 记录日志
     cat_log = CatLog(
@@ -97,6 +112,7 @@ def sitemap_xml():
 
 
 @app.route('/sitemap.txt')
+@limiter.limit("10 per minute")  # 限制访问频率
 def sitemap_txt():
     # 记录日志
     cat_log = CatLog(
@@ -109,8 +125,9 @@ def sitemap_txt():
     threading.Thread(target=async_log, args=(cat_log,)).start()
     return redirect('https://www.g2022cyk.top/sitemap.txt')
 
-
+@app.route('/robots')
 @app.route('/robots.txt')
+@limiter.limit("10 per minute")  # 限制访问频率
 # 允许爬虫抓取
 def robots_txt():
     # 记录日志
@@ -127,6 +144,7 @@ Allow: /'''
 
 
 @app.route('/ads.txt')
+@limiter.limit("10 per minute")  # 限制访问频率
 def ads_txt():
     # 记录日志
     cat_log = CatLog(

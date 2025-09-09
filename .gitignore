@@ -7,3 +7,4 @@ client-key.pem
 .env
 .idea
 ca.zip
+test.py
